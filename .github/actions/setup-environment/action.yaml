@@ -1,0 +1,42 @@
+# .github/actions/android/setup-environment/action.yaml
+
+name: 'Setup Environment'
+description: 'Checks out code, copy CI gradle.properties, sets up JDK, and configures Gradle with caching and build scans.'
+
+inputs:
+  java-version:
+    description: 'The Java version to install (e.g., 17, 21)'
+    required: true
+    default: 21
+  gradle-encryption-key:
+    description: 'The key used to encrypt and decrypt the Gradle cache'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+#    - name: Checkout Code
+#      uses: actions/checkout@v4
+
+    - name: Mask Gradle encryption key
+      shell: bash
+      run: |
+        echo "::add-mask::${{ inputs.gradle-encryption-key }}"
+
+    - name: Copy CI gradle.properties
+      shell: bash
+      run: mkdir -p ~/.gradle ; cp .github/ci-gradle.properties ~/.gradle/gradle.properties
+
+    - name: Set up JDK
+      uses: actions/setup-java@v5
+      with:
+        distribution: 'zulu'
+        java-version: ${{ inputs.java-version }}
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+      with:
+        cache-encryption-key: ${{ inputs.gradle-encryption-key }}
+        build-scan-publish: true
+        build-scan-terms-of-use-url: "https://gradle.com/terms-of-service"
+        build-scan-terms-of-use-agree: "yes"
